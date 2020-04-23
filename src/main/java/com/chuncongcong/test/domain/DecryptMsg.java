@@ -1,5 +1,6 @@
 package com.chuncongcong.test.domain;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 /**
@@ -10,9 +11,12 @@ import lombok.Data;
 @Data
 public class DecryptMsg {
 
-	private String Random;
+	@JsonProperty(value = "Random")
+	private String random;
 
-	private String EventType;
+	@JsonProperty(value = "EventType")
+	private String eventType;
 
-	private String TestSuiteKey;
+	@JsonProperty(value = "TestSuiteKey")
+	private String testSuiteKey;
 }

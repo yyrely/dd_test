@@ -11,6 +11,7 @@ import com.chuncongcong.test.domain.DecryptMsg;
 import com.chuncongcong.test.service.TestService;
 import com.chuncongcong.test.utils.DingTalkEncryptException;
 import com.chuncongcong.test.utils.DingTalkEncryptor;
+import com.chuncongcong.test.utils.JacksonUtils;
 import com.chuncongcong.test.vo.DDVo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,9 +29,6 @@ public class TestController {
 	@Autowired
 	private TestService testService;
 
-	@Autowired
-	private ObjectMapper objectMapper;
-
 	@PostMapping("/callback")
 	public String test(@RequestBody DDVo ddVo, String signature, String timestamp, String nonce) throws JsonProcessingException {
 		String decryptMsgString = null;
@@ -40,7 +38,7 @@ public class TestController {
 			dingTalkEncryptor = new DingTalkEncryptor("123", "23b0rye8v70u6ucrt38wtm9wkvtqrw9dk2k8em5t1id", "suitevboo2acr6jp0ufce");
 			decryptMsgString = dingTalkEncryptor.getDecryptMsg(signature, timestamp, nonce, ddVo.getEncrypt());
 			log.info("decryptMsgString, {}", decryptMsgString);
-			decryptMsg = objectMapper.readValue(decryptMsgString, DecryptMsg.class);
+			decryptMsg = JacksonUtils.jsonToObject(decryptMsgString, DecryptMsg.class);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -65,6 +63,6 @@ public class TestController {
 			e.printStackTrace();
 		}
 
-		return objectMapper.writeValueAsString(jsonMap);
+		return JacksonUtils.toJson(jsonMap);
 	}
 }
