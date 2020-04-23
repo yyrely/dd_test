@@ -14,12 +14,14 @@ import com.chuncongcong.test.utils.DingTalkEncryptor;
 import com.chuncongcong.test.vo.DDVo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author HU
  * @date 2020/4/16 21:53
  */
 
+@Slf4j
 @RestController
 public class TestController {
 
@@ -37,6 +39,7 @@ public class TestController {
 		try {
 			dingTalkEncryptor = new DingTalkEncryptor("123", "23b0rye8v70u6ucrt38wtm9wkvtqrw9dk2k8em5t1id", "suitevboo2acr6jp0ufce");
 			decryptMsgString = dingTalkEncryptor.getDecryptMsg(signature, timestamp, nonce, ddVo.getEncrypt());
+			log.info("decryptMsgString, {}", decryptMsgString);
 			decryptMsg = objectMapper.readValue(decryptMsgString, DecryptMsg.class);
 		} catch (Exception e) {
 			e.printStackTrace();
