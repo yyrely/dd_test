@@ -17,7 +17,7 @@ public class TestController {
 	@Autowired
 	private TestService testService;
 
-	@GetMapping("/test")
+	@GetMapping("/callback")
 	public String test() {
 		return testService.test();
 	}
