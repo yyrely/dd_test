@@ -1,6 +1,8 @@
 package com.chuncongcong.test.controller;
 
 import com.chuncongcong.test.service.TestService;
+import com.chuncongcong.test.utils.DingTalkEncryptException;
+import com.chuncongcong.test.utils.DingTalkEncryptor;
 import com.chuncongcong.test.vo.DDVo;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +23,14 @@ public class TestController {
 	private TestService testService;
 
 	@PostMapping("/callback")
-	public String test(@RequestBody DDVo ddVo, String signature, Long timestamp, String nonce) {
-		System.out.println(ddVo.getEncrypt());
-		System.out.println(signature);
-		System.out.println(timestamp);
-		System.out.println(nonce);
-		return null;
+	public String test(@RequestBody DDVo ddVo, String signature, String timestamp, String nonce) {
+		String decryptMsg = null;
+		try {
+			DingTalkEncryptor dingTalkEncryptor = new DingTalkEncryptor("123", "23b0rye8v70u6ucrt38wtm9wkvtqrw9dk2k8em5t1id", "suitevboo2acr6jp0ufce");
+			decryptMsg = dingTalkEncryptor.getDecryptMsg(signature, timestamp, nonce, ddVo.getEncrypt());
+		} catch (DingTalkEncryptException e) {
+			e.printStackTrace();
+		}
+		return decryptMsg;
 	}
 }
