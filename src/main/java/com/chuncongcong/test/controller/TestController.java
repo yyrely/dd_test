@@ -5,9 +5,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import com.chuncongcong.test.config.DingProperties;
 import com.chuncongcong.test.utils.DingTalkEncryptException;
@@ -32,6 +35,9 @@ public class TestController {
     @Autowired
     private DingProperties dingProperties;
 
+    @Autowired
+    private RestTemplate restTemplate;
+
     @PostMapping("/callback")
     public Map<String, String> test(@RequestBody JsonNode jsonNode, String signature, String timestamp, String nonce) {
 
@@ -45,12 +51,51 @@ public class TestController {
                 log.info("[callback] 验证回调地址有效性质:{}", decryJsonNode);
                 resultMap = encryptText("success");
                 break;
-			case "suite_ticket":
-				log.info("[callback] 验证回调地址有效性质:{}", decryJsonNode);
+            case "suite_ticket":
+                log.info("[callback] 推送suite_ticket:{}", decryJsonNode);
                 String suiteTicket = decryJsonNode.get("SuiteTicket").textValue();
                 publicMap.put("suiteTicket", suiteTicket);
                 resultMap = encryptText("success");
                 break;
+            case "tmp_auth_code":
+                log.info("[callback] 授权开通:{}", decryJsonNode);
+                String authCorpId = decryJsonNode.get("AuthCorpId").textValue();
+                String authCode = decryJsonNode.get("AuthCode").textValue();
+                // 获取accessToken
+                Map<String, String> tokenBody = new HashMap<>();
+                tokenBody.put("suite_key", dingProperties.getSuiteKey());
+                tokenBody.put("suite_secret", dingProperties.getSuiteSecret());
+                tokenBody.put("suite_ticket", publicMap.get("suiteTicket"));
+                HttpEntity<Map<String, String>> tokenRequest = new HttpEntity<>(tokenBody);
+                ResponseEntity<String> tokenResponseEntity = restTemplate
+                    .postForEntity("https://oapi.dingtalk.com/service/get_suite_token", tokenRequest, String.class);
+                JsonNode tokenResponse = JacksonUtils.jsonToTree(tokenResponseEntity.getBody());
+                String accessToken = tokenResponse.get("suite_access_token").textValue();
+
+                // 获取permanentCode
+                Map<String, String> permanentCodeBody = new HashMap<>();
+                permanentCodeBody.put("tmp_auth_code", authCode);
+                HttpEntity<Map<String, String>> permanentCodeRequest = new HttpEntity<>(permanentCodeBody);
+                Map<String, String> permanentCodeParam = new HashMap<>();
+                permanentCodeParam.put("suite_access_token", accessToken);
+                ResponseEntity<String> permanentCodeResponseEntity = restTemplate.postForEntity("https://oapi.dingtalk.com/service/get_permanent_code",
+                        permanentCodeRequest, String.class, permanentCodeParam);
+                JsonNode permanentCodeResponse = JacksonUtils.jsonToTree(permanentCodeResponseEntity.getBody());
+                String permanentCode = permanentCodeResponse.get("permanent_code").textValue();
+
+                // 激活应用
+                Map<String, String> activateBody = new HashMap<>();
+                activateBody.put("suite_key", dingProperties.getSuiteKey());
+                activateBody.put("auth_corpid", authCorpId);
+                activateBody.put("permanent_code", permanentCode);
+                HttpEntity<Map<String, String>> activateRequest = new HttpEntity<>(activateBody);
+                Map<String, String> activateParam = new HashMap<>();
+                activateParam.put("suite_access_token", accessToken);
+                ResponseEntity<String> activateResponseEntity = restTemplate.postForEntity("https://oapi.dingtalk.com/service/activate_suite",
+                        activateRequest, String.class, activateParam);
+                JsonNode activateResponse = JacksonUtils.jsonToTree(activateResponseEntity.getBody());
+                Boolean isActive = "ok".equals(activateResponse.get("errmsg"));
+                resultMap = encryptText(isActive ? "success" : "failed");
             default:
                 break;
         }
