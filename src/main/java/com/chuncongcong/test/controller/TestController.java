@@ -87,6 +87,7 @@ public class TestController {
                 permanentCodeParam.put("suite_access_token", accessToken);
                 ResponseEntity<String> permanentCodeResponseEntity = restTemplate.postForEntity("https://oapi.dingtalk.com/service/get_permanent_code",
                         permanentCodeRequest, String.class, permanentCodeParam);
+                log.info("permanentCodeResponseEntity: {}", permanentCodeResponseEntity);
                 JsonNode permanentCodeResponse = JacksonUtils.jsonToTree(permanentCodeResponseEntity.getBody());
                 String permanentCode = permanentCodeResponse.get("permanent_code").textValue();
                 log.info("get permanentCode success, permanentCode{}", permanentCode);
