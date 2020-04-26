@@ -64,6 +64,7 @@ public class TestController {
                 break;
             case "tmp_auth_code":
                 log.info("[callback] 授权开通:{}", decryJsonNode);
+                log.info("suiteTicket: {}", publicMap.get("suiteTicket"));
                 String authCorpId = decryJsonNode.get("AuthCorpId").textValue();
                 String authCode = decryJsonNode.get("AuthCode").textValue();
                 // 获取accessToken
@@ -76,6 +77,7 @@ public class TestController {
                     .postForEntity("https://oapi.dingtalk.com/service/get_suite_token", tokenRequest, String.class);
                 JsonNode tokenResponse = JacksonUtils.jsonToTree(tokenResponseEntity.getBody());
                 String accessToken = tokenResponse.get("suite_access_token").textValue();
+                log.info("get access token success, accessToken{}", accessToken);
 
                 // 获取permanentCode
                 Map<String, String> permanentCodeBody = new HashMap<>();
@@ -87,6 +89,7 @@ public class TestController {
                         permanentCodeRequest, String.class, permanentCodeParam);
                 JsonNode permanentCodeResponse = JacksonUtils.jsonToTree(permanentCodeResponseEntity.getBody());
                 String permanentCode = permanentCodeResponse.get("permanent_code").textValue();
+                log.info("get permanentCode success, permanentCode{}", permanentCode);
 
                 // 激活应用
                 Map<String, String> activateBody = new HashMap<>();
