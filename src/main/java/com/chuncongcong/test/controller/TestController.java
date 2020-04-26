@@ -83,10 +83,9 @@ public class TestController {
                 Map<String, String> permanentCodeBody = new HashMap<>();
                 permanentCodeBody.put("tmp_auth_code", authCode);
                 HttpEntity<Map<String, String>> permanentCodeRequest = new HttpEntity<>(permanentCodeBody);
-                Map<String, String> permanentCodeParam = new HashMap<>();
-                permanentCodeParam.put("suite_access_token", accessToken);
-                ResponseEntity<String> permanentCodeResponseEntity = restTemplate.postForEntity("https://oapi.dingtalk.com/service/get_permanent_code",
-                        permanentCodeRequest, String.class, permanentCodeParam);
+                ResponseEntity<String> permanentCodeResponseEntity = restTemplate.postForEntity(
+                    "https://oapi.dingtalk.com/service/get_permanent_code?suite_access_token=" + accessToken,
+                    permanentCodeRequest, String.class);
                 log.info("permanentCodeResponseEntity: {}", permanentCodeResponseEntity);
                 JsonNode permanentCodeResponse = JacksonUtils.jsonToTree(permanentCodeResponseEntity.getBody());
                 String permanentCode = permanentCodeResponse.get("permanent_code").textValue();
@@ -98,10 +97,8 @@ public class TestController {
                 activateBody.put("auth_corpid", authCorpId);
                 activateBody.put("permanent_code", permanentCode);
                 HttpEntity<Map<String, String>> activateRequest = new HttpEntity<>(activateBody);
-                Map<String, String> activateParam = new HashMap<>();
-                activateParam.put("suite_access_token", accessToken);
-                ResponseEntity<String> activateResponseEntity = restTemplate.postForEntity("https://oapi.dingtalk.com/service/activate_suite",
-                        activateRequest, String.class, activateParam);
+                ResponseEntity<String> activateResponseEntity = restTemplate.postForEntity(
+                    "https://oapi.dingtalk.com/service/activate_suite?suite_access_token=" + accessToken, activateRequest, String.class);
                 JsonNode activateResponse = JacksonUtils.jsonToTree(activateResponseEntity.getBody());
                 Boolean isActive = "ok".equals(activateResponse.get("errmsg"));
                 resultMap = encryptText(isActive ? "success" : "failed");
