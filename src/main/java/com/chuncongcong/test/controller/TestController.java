@@ -1,5 +1,7 @@
 package com.chuncongcong.test.controller;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,14 +9,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.chuncongcong.test.domain.DecryptMsg;
-import com.chuncongcong.test.service.TestService;
+import com.chuncongcong.test.config.DingProperties;
 import com.chuncongcong.test.utils.DingTalkEncryptException;
 import com.chuncongcong.test.utils.DingTalkEncryptor;
 import com.chuncongcong.test.utils.JacksonUtils;
-import com.chuncongcong.test.vo.DDVo;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.chuncongcong.test.utils.Utils;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -26,43 +27,62 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 public class TestController {
 
-	@Autowired
-	private TestService testService;
+    private static Map<String, String> publicMap = new HashMap<>();
 
-	@PostMapping("/callback")
-	public String test(@RequestBody DDVo ddVo, String signature, String timestamp, String nonce) throws JsonProcessingException {
-		String decryptMsgString = null;
-		DecryptMsg decryptMsg = null;
-		DingTalkEncryptor dingTalkEncryptor = null;
-		try {
-			dingTalkEncryptor = new DingTalkEncryptor("123", "23b0rye8v70u6ucrt38wtm9wkvtqrw9dk2k8em5t1id", "suitevboo2acr6jp0ufce");
-			decryptMsgString = dingTalkEncryptor.getDecryptMsg(signature, timestamp, nonce, ddVo.getEncrypt());
-			log.info("decryptMsgString, {}", decryptMsgString);
-			decryptMsg = JacksonUtils.jsonToObject(decryptMsgString, DecryptMsg.class);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+    @Autowired
+    private DingProperties dingProperties;
 
-		if(decryptMsg == null) {
-			throw new RuntimeException("decryptMsg is null");
-		}
+    @PostMapping("/callback")
+    public Map<String, String> test(@RequestBody JsonNode jsonNode, String signature, String timestamp, String nonce) {
 
-		switch (decryptMsg.getEventType()) {
-			case "check_create_suite_url":
-				//可返回表明服务端“收到了”的字段
-				break;
-			default:
-				break;
-		}
+        String decryptText = decryptText(signature, timestamp, nonce, jsonNode.get("encrypt").textValue());
+        JsonNode decryJsonNode = JacksonUtils.jsonToTree(decryptText);
 
-		long timeStampLong = Long.parseLong(timestamp);
-		Map<String, String> jsonMap = null;
-		try {
-			jsonMap = dingTalkEncryptor.getEncryptedMap("success", timeStampLong, nonce);
-		} catch (DingTalkEncryptException e) {
-			e.printStackTrace();
-		}
+        Map<String, String> resultMap = new HashMap<>();
 
-		return JacksonUtils.toJson(jsonMap);
-	}
+        switch (decryJsonNode.get("EventType").textValue()) {
+            case "check_create_suite_url":
+                log.info("[callback] 验证回调地址有效性质:{}", decryJsonNode);
+                resultMap = encryptText("success");
+                break;
+			case "suite_ticket":
+				log.info("[callback] 验证回调地址有效性质:{}", decryJsonNode);
+                String suiteTicket = decryJsonNode.get("SuiteTicket").textValue();
+                publicMap.put("suiteTicket", suiteTicket);
+                resultMap = encryptText("success");
+                break;
+            default:
+                break;
+        }
+
+        return resultMap;
+    }
+
+    private String decryptText(String signature, String timestamp, String nonce, String encryptMsg) {
+        String plainText = "";
+        try {
+            DingTalkEncryptor dingTalkEncryptor = new DingTalkEncryptor(dingProperties.getSuiteToken(),
+                dingProperties.getEncodingAESKey(), dingProperties.getSuiteKey());
+            plainText = dingTalkEncryptor.getDecryptMsg(signature, timestamp, nonce, encryptMsg);
+        } catch (DingTalkEncryptException e) {
+            log.error("钉钉消息体解密错误, signature: {}, timestamp: {}, nonce: {}, encryptMsg: {}, e: {}", signature, timestamp,
+                nonce, encryptMsg, e);
+        }
+        log.debug("钉钉消息体解密, signature: {}, timestamp: {}, nonce: {}, encryptMsg: {}, 解密结果: {}", signature, timestamp,
+            nonce, encryptMsg, plainText);
+        return plainText;
+    }
+
+    private Map<String, String> encryptText(String text) {
+        Map<String, String> resultMap = new LinkedHashMap<>();
+        try {
+            DingTalkEncryptor dingTalkEncryptor = new DingTalkEncryptor(dingProperties.getSuiteToken(),
+                dingProperties.getEncodingAESKey(), dingProperties.getSuiteKey());
+            resultMap = dingTalkEncryptor.getEncryptedMap(text, System.currentTimeMillis(), Utils.getRandomStr(8));
+        } catch (DingTalkEncryptException e) {
+            log.error("钉钉消息体加密,text: {}, e: {}", text, e);
+        }
+        log.debug("钉钉消息体加密,text: {}, resultMap: {}", text, resultMap);
+        return resultMap;
+    }
 }

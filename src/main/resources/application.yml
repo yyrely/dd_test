@@ -1,2 +1,9 @@
 server:
   port: 8030
+
+ding:
+  suite:
+    key: suitevboo2acr6jp0ufce
+    secret: _8Urju--hMp3H4hlbpJ6lZvifmc7wCGYPSOSeUAmH36gmyOlREphTo_ls4C77anj
+    token: 123
+    aes-key: 23b0rye8v70u6ucrt38wtm9wkvtqrw9dk2k8em5t1id
