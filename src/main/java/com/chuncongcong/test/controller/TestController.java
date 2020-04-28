@@ -151,7 +151,7 @@ public class TestController {
 
                 // 注册业务事件回调
                 Map<String, String> registerCallBody = new HashMap<>();
-                registerCallBody.put("call_back_tag", JacksonUtils.toJson(new String[] {"bpms_instance_change"}));
+                registerCallBody.put("call_back_tag", JacksonUtils.toJson(new String[] {"bpms_instance_change","bpms_task_change"}));
                 registerCallBody.put("token", dingProperties.getSuiteToken());
                 registerCallBody.put("aes_key", dingProperties.getEncodingAESKey());
                 registerCallBody.put("url", "http://www.chuncongcong.com:8030/callback");
