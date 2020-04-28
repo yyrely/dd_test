@@ -163,6 +163,11 @@ public class TestController {
                 log.info("registerCallResponse: {}", registerCallResponse);
                 boolean isRegisterCall = "ok".equals(registerCallResponse.get("errmsg"));
                 resultMap = encryptText(isRegisterCall ? "success" : "failed");
+
+                ResponseEntity<String> getCallBackEntity = restTemplate.getForEntity(
+                        "https://oapi.dingtalk.com/call_back/get_call_back?access_token={accessToken}", String.class, accessToken);
+                JsonNode getCallBackResponse = JacksonUtils.jsonToTree(getCallBackEntity.getBody());
+                log.info("getCallBackResponse: {}", getCallBackResponse);
             default:
                 break;
         }
