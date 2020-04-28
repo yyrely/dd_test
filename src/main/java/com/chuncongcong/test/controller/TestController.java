@@ -47,6 +47,10 @@ public class TestController {
 
     @PostMapping("/callback")
     public Map<String, String> test(@RequestBody JsonNode jsonNode, String signature, String timestamp, String nonce) {
+        log.info("jsonNode: {}", jsonNode);
+        log.info("signature: {}", signature);
+        log.info("timestamp: {}", timestamp);
+        log.info("nonce: {}", nonce);
 
         String decryptText = decryptText(signature, timestamp, nonce, jsonNode.get("encrypt").textValue());
         JsonNode decryJsonNode = JacksonUtils.jsonToTree(decryptText);
