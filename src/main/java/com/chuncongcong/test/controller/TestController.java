@@ -52,6 +52,17 @@ public class TestController {
         Map<String, String> resultMap = new HashMap<>();
 
         switch (decryJsonNode.get("EventType").textValue()) {
+            case "bpms_instance_change":
+                log.info("[callback] 审批事件回调:{}", decryJsonNode);
+                String processInstanceId = decryJsonNode.get("processInstanceId").textValue();
+                String type = decryJsonNode.get("type").textValue();
+                log.info("processInstanceId: {}", processInstanceId);
+                log.info("type: {}", type);
+                break;
+            case "check_url":
+                log.info("[callback] 验证注册回调地址有效性质:{}", decryJsonNode);
+                resultMap = encryptText("success");
+                break;
             case "check_create_suite_url":
                 log.info("[callback] 验证回调地址有效性质:{}", decryJsonNode);
                 resultMap = encryptText("success");
@@ -100,8 +111,21 @@ public class TestController {
                 ResponseEntity<String> activateResponseEntity = restTemplate.postForEntity(
                     "https://oapi.dingtalk.com/service/activate_suite?suite_access_token=" + accessToken, activateRequest, String.class);
                 JsonNode activateResponse = JacksonUtils.jsonToTree(activateResponseEntity.getBody());
-                Boolean isActive = "ok".equals(activateResponse.get("errmsg"));
-                resultMap = encryptText(isActive ? "success" : "failed");
+                boolean isActive = "ok".equals(activateResponse.get("errmsg"));
+                log.info("active result: {}", isActive);
+
+                // 注册业务事件回调
+                Map<String, String> registerCallBody = new HashMap<>();
+                registerCallBody.put("call_back_tag", JacksonUtils.toJson(new String[]{"bpms_instance_change"}));
+                registerCallBody.put("token", dingProperties.getSuiteToken());
+                registerCallBody.put("aes_key", dingProperties.getEncodingAESKey());
+                registerCallBody.put("url", "http://www.chuncongcong.com:8030/callback");
+                HttpEntity<Map<String, String>> registerCallRequest = new HttpEntity<>(registerCallBody);
+                ResponseEntity<String> registerCallEntity = restTemplate.postForEntity(
+                        "https://oapi.dingtalk.com/service/activate_suite?suite_access_token=" + accessToken, registerCallRequest, String.class);
+                JsonNode registerCallResponse = JacksonUtils.jsonToTree(registerCallEntity.getBody());
+                boolean isRegisterCall = "ok".equals(registerCallResponse.get("errmsg"));
+                resultMap = encryptText(isRegisterCall ? "success" : "failed");
             default:
                 break;
         }
