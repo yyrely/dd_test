@@ -87,15 +87,15 @@ public class TestController {
                 ResponseEntity<String> tokenResponseEntity = restTemplate
                     .postForEntity("https://oapi.dingtalk.com/service/get_suite_token", tokenRequest, String.class);
                 JsonNode tokenResponse = JacksonUtils.jsonToTree(tokenResponseEntity.getBody());
-                String accessToken = tokenResponse.get("suite_access_token").textValue();
-                log.info("get access token success, accessToken{}", accessToken);
+                String suiteAccessToken = tokenResponse.get("suite_access_token").textValue();
+                log.info("get access token success, accessToken{}", suiteAccessToken);
 
                 // 获取permanentCode
                 Map<String, String> permanentCodeBody = new HashMap<>();
                 permanentCodeBody.put("tmp_auth_code", authCode);
                 HttpEntity<Map<String, String>> permanentCodeRequest = new HttpEntity<>(permanentCodeBody);
                 ResponseEntity<String> permanentCodeResponseEntity = restTemplate.postForEntity(
-                    "https://oapi.dingtalk.com/service/get_permanent_code?suite_access_token=" + accessToken,
+                    "https://oapi.dingtalk.com/service/get_permanent_code?suite_access_token=" + suiteAccessToken,
                     permanentCodeRequest, String.class);
                 log.info("permanentCodeResponseEntity: {}", permanentCodeResponseEntity);
                 JsonNode permanentCodeResponse = JacksonUtils.jsonToTree(permanentCodeResponseEntity.getBody());
@@ -109,21 +109,37 @@ public class TestController {
                 activateBody.put("permanent_code", permanentCode);
                 HttpEntity<Map<String, String>> activateRequest = new HttpEntity<>(activateBody);
                 ResponseEntity<String> activateResponseEntity = restTemplate.postForEntity(
-                    "https://oapi.dingtalk.com/service/activate_suite?suite_access_token=" + accessToken, activateRequest, String.class);
+                    "https://oapi.dingtalk.com/service/activate_suite?suite_access_token=" + suiteAccessToken,
+                    activateRequest, String.class);
                 JsonNode activateResponse = JacksonUtils.jsonToTree(activateResponseEntity.getBody());
                 log.info("activateResponse: {}", activateResponse);
                 boolean isActive = "ok".equals(activateResponse.get("errmsg"));
                 log.info("active result: {}", isActive);
 
+                // 获取企业凭证
+                Map<String, String> corpTokenBody = new HashMap<>();
+                corpTokenBody.put("auth_corpid", dingProperties.getCorpId());
+                HttpEntity<Map<String, String>> corpTokenRequest = new HttpEntity<>(corpTokenBody);
+                ResponseEntity<String> corpTokenEntity =
+                    restTemplate.postForEntity(
+                        "https://oapi.dingtalk.com/service/get_corp_token?signature=" + dingProperties.getSuiteSecret()
+                            + "&timestamp=" + System.currentTimeMillis() + "&suiteTicket="
+                            + publicMap.get("suiteTicket") + "&accessKey=" + dingProperties.getSuiteKey(),
+                        corpTokenRequest, String.class);
+                JsonNode corpTokenResponse = JacksonUtils.jsonToTree(corpTokenEntity.getBody());
+                log.info("corpTokenResponse: {}", corpTokenResponse);
+                String accessToken = corpTokenResponse.get("access_token").textValue();
+
                 // 注册业务事件回调
                 Map<String, String> registerCallBody = new HashMap<>();
-                registerCallBody.put("call_back_tag", JacksonUtils.toJson(new String[]{"bpms_instance_change"}));
+                registerCallBody.put("call_back_tag", JacksonUtils.toJson(new String[] {"bpms_instance_change"}));
                 registerCallBody.put("token", dingProperties.getSuiteToken());
                 registerCallBody.put("aes_key", dingProperties.getEncodingAESKey());
                 registerCallBody.put("url", "http://www.chuncongcong.com:8030/callback");
                 HttpEntity<Map<String, String>> registerCallRequest = new HttpEntity<>(registerCallBody);
                 ResponseEntity<String> registerCallEntity = restTemplate.postForEntity(
-                        "https://oapi.dingtalk.com/call_back/register_call_back?access_token=" + accessToken, registerCallRequest, String.class);
+                    "https://oapi.dingtalk.com/call_back/register_call_back?access_token=" + accessToken,
+                    registerCallRequest, String.class);
                 JsonNode registerCallResponse = JacksonUtils.jsonToTree(registerCallEntity.getBody());
                 log.info("registerCallResponse: {}", registerCallResponse);
                 boolean isRegisterCall = "ok".equals(registerCallResponse.get("errmsg"));

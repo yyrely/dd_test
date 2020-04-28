@@ -14,8 +14,6 @@ import lombok.Data;
 @Configuration
 public class DingProperties {
 
-	public static final String url_suite_token = "https://oapi.dingtalk.com/service/get_suite_token";
-
 	@Value("${ding.suite.key}")
 	private String suiteKey;
 
@@ -38,5 +36,8 @@ public class DingProperties {
 	 */
 	@Value("${ding.suite.aes-key}")
 	private String encodingAESKey;
+
+	@Value("${ding.corpId}")
+	private String corpId;
 
 }

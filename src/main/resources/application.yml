@@ -2,6 +2,7 @@ server:
   port: 8030
 
 ding:
+  corpId: dingb313afaa42af4ed5
   suite:
     key: suitevboo2acr6jp0ufce
     secret: _8Urju--hMp3H4hlbpJ6lZvifmc7wCGYPSOSeUAmH36gmyOlREphTo_ls4C77anj
