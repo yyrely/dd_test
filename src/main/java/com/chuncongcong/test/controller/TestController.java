@@ -41,11 +41,6 @@ public class TestController {
     @PostMapping("/callback")
     public Map<String, String> test(@RequestBody JsonNode jsonNode, String signature, String timestamp, String nonce) {
 
-        System.out.println(jsonNode);
-        System.out.println(signature);
-        System.out.println(timestamp);
-        System.out.println(nonce);
-
         String decryptText = decryptText(signature, timestamp, nonce, jsonNode.get("encrypt").textValue());
         JsonNode decryJsonNode = JacksonUtils.jsonToTree(decryptText);
 
@@ -120,12 +115,12 @@ public class TestController {
                 Map<String, String> corpTokenBody = new HashMap<>();
                 corpTokenBody.put("auth_corpid", dingProperties.getCorpId());
                 HttpEntity<Map<String, String>> corpTokenRequest = new HttpEntity<>(corpTokenBody);
+                String corpTokenUrl = "https://oapi.dingtalk.com/service/get_corp_token?signature="
+                    + dingProperties.getSuiteSecret() + "&timestamp=" + System.currentTimeMillis() + "&suiteTicket="
+                    + publicMap.get("suiteTicket") + "&accessKey=" + dingProperties.getSuiteKey();
+                log.info("corpTokenUrl: {}", corpTokenUrl);
                 ResponseEntity<String> corpTokenEntity =
-                    restTemplate.postForEntity(
-                        "https://oapi.dingtalk.com/service/get_corp_token?signature=" + dingProperties.getSuiteSecret()
-                            + "&timestamp=" + System.currentTimeMillis() + "&suiteTicket="
-                            + publicMap.get("suiteTicket") + "&accessKey=" + dingProperties.getSuiteKey(),
-                        corpTokenRequest, String.class);
+                    restTemplate.postForEntity(corpTokenUrl, corpTokenRequest, String.class);
                 JsonNode corpTokenResponse = JacksonUtils.jsonToTree(corpTokenEntity.getBody());
                 log.info("corpTokenResponse: {}", corpTokenResponse);
                 String accessToken = corpTokenResponse.get("access_token").textValue();
