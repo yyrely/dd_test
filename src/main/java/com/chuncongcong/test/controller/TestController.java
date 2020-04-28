@@ -123,7 +123,7 @@ public class TestController {
                 registerCallBody.put("url", "http://www.chuncongcong.com:8030/callback");
                 HttpEntity<Map<String, String>> registerCallRequest = new HttpEntity<>(registerCallBody);
                 ResponseEntity<String> registerCallEntity = restTemplate.postForEntity(
-                        "https://oapi.dingtalk.com/call_back/register_call_back?suite_access_token=" + accessToken, registerCallRequest, String.class);
+                        "https://oapi.dingtalk.com/call_back/register_call_back?access_token=" + accessToken, registerCallRequest, String.class);
                 JsonNode registerCallResponse = JacksonUtils.jsonToTree(registerCallEntity.getBody());
                 log.info("registerCallResponse: {}", registerCallResponse);
                 boolean isRegisterCall = "ok".equals(registerCallResponse.get("errmsg"));
