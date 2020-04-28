@@ -1,6 +1,9 @@
 package com.chuncongcong.test.controller;
 
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -39,6 +42,10 @@ public class TestController {
 
     private static Map<String, String> publicMap = new HashMap<>();
 
+    static {
+        publicMap.put("suiteTicket","IvXrFbyP1xvfOfYbqnj8s36HGq4cYQba0TgwAOUpaSLcCJBKIieFTFFndOCLJGlpofmcgNmGnPbDbhoQMPzbRN");
+    }
+
     @Autowired
     private DingProperties dingProperties;
 
@@ -46,11 +53,7 @@ public class TestController {
     private RestTemplate restTemplate;
 
     @PostMapping("/callback")
-    public Map<String, String> test(@RequestBody JsonNode jsonNode, String signature, String timestamp, String nonce) {
-        log.info("jsonNode: {}", jsonNode);
-        log.info("signature: {}", signature);
-        log.info("timestamp: {}", timestamp);
-        log.info("nonce: {}", nonce);
+    public Map<String, String> test(@RequestBody JsonNode jsonNode, String signature, String timestamp, String nonce) throws Exception {
 
         String decryptText = decryptText(signature, timestamp, nonce, jsonNode.get("encrypt").textValue());
         JsonNode decryJsonNode = JacksonUtils.jsonToTree(decryptText);
@@ -71,6 +74,10 @@ public class TestController {
                 break;
             case "check_create_suite_url":
                 log.info("[callback] 验证回调地址有效性质:{}", decryJsonNode);
+                resultMap = encryptText("success");
+                break;
+            case "check_update_suite_url":
+                log.info("[callback] 验证更新回调地址有效性质:{}", decryJsonNode);
                 resultMap = encryptText("success");
                 break;
             case "suite_ticket":
@@ -125,7 +132,6 @@ public class TestController {
                 // 获取企业凭证
                 long corpTokenTimestamp = System.currentTimeMillis();
                 String corpTokenSignature = getSignature(corpTokenTimestamp);
-
                 String urlEncode = urlEncode(corpTokenSignature, "utf-8");
 
                 Map<String, String> corpTokenBody = new HashMap<>();
@@ -136,7 +142,7 @@ public class TestController {
                     + publicMap.get("suiteTicket") + "&accessKey=" + dingProperties.getSuiteKey();
                 log.info("corpTokenUrl: {}", corpTokenUrl);
                 ResponseEntity<String> corpTokenEntity =
-                    restTemplate.postForEntity(corpTokenUrl, corpTokenRequest, String.class);
+                    restTemplate.postForEntity(new URI(corpTokenUrl), corpTokenRequest, String.class);
                 JsonNode corpTokenResponse = JacksonUtils.jsonToTree(corpTokenEntity.getBody());
                 log.info("corpTokenResponse: {}", corpTokenResponse);
                 String accessToken = corpTokenResponse.get("access_token").textValue();

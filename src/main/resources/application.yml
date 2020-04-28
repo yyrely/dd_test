@@ -1,5 +1,5 @@
 server:
-  port: 8030
+  port: 8080
 
 ding:
   corpId: dingb313afaa42af4ed5
