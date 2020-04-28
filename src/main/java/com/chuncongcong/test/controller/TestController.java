@@ -1,8 +1,14 @@
 package com.chuncongcong.test.controller;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -20,6 +26,7 @@ import com.chuncongcong.test.utils.Utils;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * @author HU
@@ -108,15 +115,19 @@ public class TestController {
                     activateRequest, String.class);
                 JsonNode activateResponse = JacksonUtils.jsonToTree(activateResponseEntity.getBody());
                 log.info("activateResponse: {}", activateResponse);
-                boolean isActive = "ok".equals(activateResponse.get("errmsg"));
+                boolean isActive = "ok".equals(activateResponse.get("errmsg").textValue());
                 log.info("active result: {}", isActive);
 
                 // 获取企业凭证
+                long corpTokenTimestamp = System.currentTimeMillis();
+                String corpTokenSignature = getSignature(corpTokenTimestamp);
+                String urlEncode = urlEncode(corpTokenSignature, "UTF-8");
+
                 Map<String, String> corpTokenBody = new HashMap<>();
                 corpTokenBody.put("auth_corpid", dingProperties.getCorpId());
                 HttpEntity<Map<String, String>> corpTokenRequest = new HttpEntity<>(corpTokenBody);
                 String corpTokenUrl = "https://oapi.dingtalk.com/service/get_corp_token?signature="
-                    + dingProperties.getSuiteSecret() + "&timestamp=" + System.currentTimeMillis() + "&suiteTicket="
+                    + urlEncode + "&timestamp=" + corpTokenTimestamp + "&suiteTicket="
                     + publicMap.get("suiteTicket") + "&accessKey=" + dingProperties.getSuiteKey();
                 log.info("corpTokenUrl: {}", corpTokenUrl);
                 ResponseEntity<String> corpTokenEntity =
@@ -133,11 +144,11 @@ public class TestController {
                 registerCallBody.put("url", "http://www.chuncongcong.com:8030/callback");
                 HttpEntity<Map<String, String>> registerCallRequest = new HttpEntity<>(registerCallBody);
                 ResponseEntity<String> registerCallEntity = restTemplate.postForEntity(
-                    "https://oapi.dingtalk.com/call_back/register_call_back?access_token=" + accessToken,
-                    registerCallRequest, String.class);
+                    "https://oapi.dingtalk.com/call_back/register_call_back?access_token={accessToken}",
+                    registerCallRequest, String.class, accessToken);
                 JsonNode registerCallResponse = JacksonUtils.jsonToTree(registerCallEntity.getBody());
                 log.info("registerCallResponse: {}", registerCallResponse);
-                boolean isRegisterCall = "ok".equals(registerCallResponse.get("errmsg"));
+                boolean isRegisterCall = "ok".equals(registerCallResponse.get("errmsg").textValue());
                 resultMap = encryptText(isRegisterCall ? "success" : "failed");
             default:
                 break;
@@ -172,5 +183,32 @@ public class TestController {
         }
         log.debug("钉钉消息体加密,text: {}, resultMap: {}", text, resultMap);
         return resultMap;
+    }
+
+    private String getSignature(long timestamp) {
+        try {
+            String stringToSign = timestamp+"\n"+publicMap.get("suiteTicket");
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(dingProperties.getSuiteSecret().getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] signData = mac.doFinal(stringToSign.getBytes(StandardCharsets.UTF_8));
+            return new String(Base64.encodeBase64(signData));
+        } catch (Exception e) {
+            log.error("签名计算异常, e: {}", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String urlEncode(String value, String encoding) {
+        if (value == null) {
+            return "";
+        }
+
+        try {
+            String encoded = URLEncoder.encode(value, encoding);
+            return encoded.replace("+", "%20").replace("*", "%2A")
+                    .replace("~", "%7E").replace("/", "%2F");
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalArgumentException("FailedToEncodeUri", e);
+        }
     }
 }
