@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import com.chuncongcong.test.config.DingProperties;
 import com.chuncongcong.test.utils.JacksonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -29,6 +30,9 @@ public class CallBackRegisterController {
     private static final String APP_SECRET = "k6i8xIqngf91qcJVbW_aRJFNus-D_sSwIGcLlZMOSTwr1cqz1yoGM3zYFEEsuyTt";
 
     @Autowired
+	private DingProperties dingProperties;
+
+    @Autowired
     private RestTemplate restTemplate;
 
     @GetMapping("/callBack/register")
@@ -41,8 +45,8 @@ public class CallBackRegisterController {
 		// 注册业务事件回调
 		Map<String, String> registerCallBody = new HashMap<>();
 		registerCallBody.put("call_back_tag", JacksonUtils.toJson(new String[] {"bpms_instance_change","bpms_task_change"}));
-		registerCallBody.put("token", "1234");
-		registerCallBody.put("aes_key", "23b0rye8v70u6ucrt38wtm9wkvtqrw9dk2k8em5t1id");
+		registerCallBody.put("token", dingProperties.getSuiteToken());
+		registerCallBody.put("aes_key", dingProperties.getSuiteKey());
 		registerCallBody.put("url", "http://www.chuncongcong.com:8030/callback");
 		HttpEntity<Map<String, String>> registerCallRequest = new HttpEntity<>(registerCallBody);
 		ResponseEntity<String> registerCallEntity = restTemplate.postForEntity(
