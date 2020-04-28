@@ -37,6 +37,7 @@ public class DingProperties {
 	@Value("${ding.suite.aes-key}")
 	private String encodingAESKey;
 
+
 	@Value("${ding.corpId}")
 	private String corpId;
 

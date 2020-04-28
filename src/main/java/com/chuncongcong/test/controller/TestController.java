@@ -115,13 +115,14 @@ public class TestController {
                     activateRequest, String.class);
                 JsonNode activateResponse = JacksonUtils.jsonToTree(activateResponseEntity.getBody());
                 log.info("activateResponse: {}", activateResponse);
-                boolean isActive = "ok".equals(activateResponse.get("errmsg").textValue());
+                boolean isActive = "ok".equals(activateResponse.get("errmsg"));
                 log.info("active result: {}", isActive);
 
                 // 获取企业凭证
                 long corpTokenTimestamp = System.currentTimeMillis();
                 String corpTokenSignature = getSignature(corpTokenTimestamp);
-                String urlEncode = urlEncode(corpTokenSignature, "UTF-8");
+
+                String urlEncode = urlEncode(corpTokenSignature, "utf-8");
 
                 Map<String, String> corpTokenBody = new HashMap<>();
                 corpTokenBody.put("auth_corpid", dingProperties.getCorpId());
@@ -148,7 +149,7 @@ public class TestController {
                     registerCallRequest, String.class, accessToken);
                 JsonNode registerCallResponse = JacksonUtils.jsonToTree(registerCallEntity.getBody());
                 log.info("registerCallResponse: {}", registerCallResponse);
-                boolean isRegisterCall = "ok".equals(registerCallResponse.get("errmsg").textValue());
+                boolean isRegisterCall = "ok".equals(registerCallResponse.get("errmsg"));
                 resultMap = encryptText(isRegisterCall ? "success" : "failed");
             default:
                 break;
