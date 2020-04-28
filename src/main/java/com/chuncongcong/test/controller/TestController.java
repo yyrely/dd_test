@@ -58,6 +58,8 @@ public class TestController {
         String decryptText = decryptText(signature, timestamp, nonce, jsonNode.get("encrypt").textValue());
         JsonNode decryJsonNode = JacksonUtils.jsonToTree(decryptText);
 
+        log.info("decryJsonNode: {}", decryJsonNode);
+
         Map<String, String> resultMap = new HashMap<>();
 
         switch (decryJsonNode.get("EventType").textValue()) {
