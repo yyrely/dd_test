@@ -111,6 +111,7 @@ public class TestController {
                 ResponseEntity<String> activateResponseEntity = restTemplate.postForEntity(
                     "https://oapi.dingtalk.com/service/activate_suite?suite_access_token=" + accessToken, activateRequest, String.class);
                 JsonNode activateResponse = JacksonUtils.jsonToTree(activateResponseEntity.getBody());
+                log.info("activateResponse: {}", activateResponse);
                 boolean isActive = "ok".equals(activateResponse.get("errmsg"));
                 log.info("active result: {}", isActive);
 
@@ -122,8 +123,9 @@ public class TestController {
                 registerCallBody.put("url", "http://www.chuncongcong.com:8030/callback");
                 HttpEntity<Map<String, String>> registerCallRequest = new HttpEntity<>(registerCallBody);
                 ResponseEntity<String> registerCallEntity = restTemplate.postForEntity(
-                        "https://oapi.dingtalk.com/service/activate_suite?suite_access_token=" + accessToken, registerCallRequest, String.class);
+                        "https://oapi.dingtalk.com/call_back/register_call_back?suite_access_token=" + accessToken, registerCallRequest, String.class);
                 JsonNode registerCallResponse = JacksonUtils.jsonToTree(registerCallEntity.getBody());
+                log.info("registerCallResponse: {}", registerCallResponse);
                 boolean isRegisterCall = "ok".equals(registerCallResponse.get("errmsg"));
                 resultMap = encryptText(isRegisterCall ? "success" : "failed");
             default:
